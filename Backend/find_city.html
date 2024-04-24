@@ -1,0 +1,84 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>find_address</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <style>
+      body {
+        margin: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <input type="text" id="address" />
+    <button onclick="findAddress()">Search</button>
+    <div>
+      <h2 id="place"></h2>
+      <h3>Lat : <span id="lat"></span></h3>
+      <h3>Lng : <span id="lng"></span></h3>
+    </div>
+    <br />
+    <center>
+      <div id="map" style="height: 400px; width: 700px"></div>
+    </center>
+    <script>
+      let map;
+      let marker;
+
+      async function findAddress() {
+        try {
+          document.getElementById("lat").textContent = "";
+          document.getElementById("lng").textContent = "";
+
+          const addressInput = document.getElementById("address");
+          const address = addressInput.value;
+          console.log(address);
+
+          document.getElementById("place").textContent = address;
+
+          const formattedAddress = address.replaceAll(" ", "_");
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${formattedAddress}`
+          );
+
+          if (!response.ok) {
+            throw new Error("Failed to fetch data");
+          }
+
+          const data = await response.json();
+          console.log(data);
+
+          const { lat, lon: lng } = data[0];
+          console.log(lat, lng);
+
+          document.getElementById("lat").textContent = lat;
+          document.getElementById("lng").textContent = lng;
+
+          if (map) {
+            map.remove();
+          }
+
+          map = L.map("map").setView([0, 0], 13);
+          L.tileLayer(
+            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          ).addTo(map);
+
+          map.setView([lat, lng], 13);
+          if (marker) {
+            marker.remove();
+          }
+          marker = L.marker([lat, lng]).addTo(map);
+          marker.bindPopup(address).openPopup();
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      }
+    </script>
+  </body>
+</html>
